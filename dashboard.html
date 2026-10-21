@@ -110,53 +110,31 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    // ---------------------------------------------------------
-    // 1. MOCK DATA (Simulates Google Apps Script JSON Response)
-    // ---------------------------------------------------------
-    const MOCK_API_RESPONSE = {
-      status: "success",
-      user: {
-        name: "Ahmad Bin Abdullah",
-        latest_bmi: "22.4",
-        latest_bp: "135/85"
-      },
-      announcements: [
-        {
-          id: "A1",
-          title: "Kempen Derma Darah",
-          message: "Klinik akan mengadakan kempen derma darah pada hujung minggu ini. Semua dijemput hadir.",
-          priority: "Normal"
-        },
-        {
-          id: "A2",
-          title: "Penutupan Sementara Bekalan Air",
-          message: "Klinik hanya menerima kes kecemasan pada 25 Okt 2026 kerana gangguan bekalan air.",
-          priority: "High"
-        }
-      ],
-      schedule: [
-        { date: "2026-10-21", day: "Rabu", status: "Buka", booked: 12, max: 20 },
-        { date: "2026-10-22", day: "Khamis", status: "Buka", booked: 20, max: 20 }, // Penuh
-        { date: "2026-10-23", day: "Jumaat", status: "Tutup", booked: 0, max: 0 },
-        { date: "2026-10-24", day: "Sabtu", status: "Hari Rehat", booked: 0, max: 0 },
-        { date: "2026-10-25", day: "Ahad", status: "Hari Rehat", booked: 0, max: 0 },
-        { date: "2026-10-26", day: "Isnin", status: "Buka", booked: 5, max: 20 },
-        { date: "2026-10-27", day: "Selasa", status: "Buka", booked: 2, max: 20 }
-      ]
-    };
+    // 1. PASTE YOUR GOOGLE APPS SCRIPT URL HERE
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxlOxcw7vZJibEDFaYj6DjiMgLFQREdZWU6apf2kvbKrH6I50o0aNtiaBmtqos-cHlHzA/exec";
 
-    // ---------------------------------------------------------
-    // 2. INITIALIZATION
-    // ---------------------------------------------------------
     window.addEventListener("DOMContentLoaded", () => {
-      // Simulate network delay for fetching data
-      setTimeout(() => {
-        loadDashboardData(MOCK_API_RESPONSE);
-      }, 800);
+      fetchDashboardData();
     });
 
+    async function fetchDashboardData() {
+      try {
+        // Fetch live data from Google Sheets
+        const response = await fetch(`${GAS_URL}?action=get_dashboard_data`);
+        const data = await response.json();
+        
+        if (data.status === "success") {
+          loadDashboardData(data);
+        } else {
+          alert("Ralat memuat turun data jadual.");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Gagal menyambung ke pangkalan data.");
+      }
+    }
+
     function loadDashboardData(data) {
-      // Populate User Info & Vitals
       document.getElementById("userName").innerText = data.user.name;
       document.getElementById("vitalBmi").innerText = data.user.latest_bmi;
       document.getElementById("vitalBp").innerText = data.user.latest_bp;
@@ -165,23 +143,18 @@
       renderSchedule(data.schedule);
     }
 
-    // ---------------------------------------------------------
-    // 3. RENDER ANNOUNCEMENTS
-    // ---------------------------------------------------------
     function renderAnnouncements(announcements) {
       const container = document.getElementById("announcementContainer");
       if (!announcements || announcements.length === 0) return;
 
-      container.innerHTML = ""; // Clear existing
+      container.innerHTML = ""; 
       container.classList.remove("hidden");
 
       announcements.forEach(ann => {
         const isHigh = ann.priority === "High";
-        
-        // Styling based on priority
-        const bgClass = isHigh ? "bg-red-50 border-red-200" : "bg-sky-50 border-sky-200";
-        const iconClass = isHigh ? "fa-circle-exclamation text-red-500" : "fa-bullhorn text-sky-500";
-        const titleColor = isHigh ? "text-red-700" : "text-sky-700";
+        const bgClass = isHigh ? "bg-emerald-50 border-emerald-200" : "bg-sky-50 border-sky-200";
+        const iconClass = isHigh ? "fa-circle-check text-emerald-500" : "fa-bullhorn text-sky-500";
+        const titleColor = isHigh ? "text-emerald-700" : "text-sky-700";
 
         const card = document.createElement("div");
         card.className = `p-4 rounded-2xl border ${bgClass} shadow-sm relative overflow-hidden`;
@@ -200,39 +173,38 @@
       });
     }
 
-    // ---------------------------------------------------------
-    // 4. RENDER CLINIC SCHEDULE
-    // ---------------------------------------------------------
     function renderSchedule(scheduleDays) {
       const container = document.getElementById("scheduleContainer");
-      container.innerHTML = ""; // Clear skeletons
+      container.innerHTML = ""; 
+
+      if (scheduleDays.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 p-4">Tiada jadual terkini dijumpai.</p>`;
+        return;
+      }
 
       scheduleDays.forEach(day => {
-        const isOpen = day.status === "Buka";
+        // Handle variations of "Buka" (e.g., "BUKA", "buka ", etc.)
+        const isOpen = day.status && day.status.trim().toLowerCase() === "buka";
         const isFull = isOpen && day.booked >= day.max;
         
-        // Parse date for display (e.g., "21 Okt")
-        const dateObj = new Date(day.date);
-        const dayNum = dateObj.getDate();
-        const monthStr = dateObj.toLocaleString('ms-MY', { month: 'short' });
+        // Custom date parsing for "DD MMM YYYY" format from your sheet
+        const dateParts = day.date.split(" ");
+        const dayNum = dateParts[0]; 
+        const monthStr = dateParts[1]; 
 
-        // Styling based on Open/Closed/Full status
         let cardStyle = "";
         let buttonHtml = "";
         let badgeHtml = "";
 
         if (isOpen && !isFull) {
-          // BUKA & ADA SLOT
           cardStyle = "bg-white border-emerald-200 border-2 shadow-md";
           badgeHtml = `<span class="bg-emerald-100 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full mb-2 block w-max mx-auto border border-emerald-200">BUKA</span>`;
           buttonHtml = `<button onclick="initiateBooking('${day.date}')" class="w-full mt-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-1.5 rounded-lg transition shadow-sm">Tempah Slot</button>`;
         } else if (isOpen && isFull) {
-          // BUKA TAPI PENUH
           cardStyle = "bg-slate-50 border-amber-200 border shadow-sm opacity-80";
           badgeHtml = `<span class="bg-amber-100 text-amber-700 text-[9px] font-bold px-2 py-0.5 rounded-full mb-2 block w-max mx-auto border border-amber-200">PENUH</span>`;
           buttonHtml = `<button disabled class="w-full mt-3 bg-slate-200 text-slate-400 text-[10px] font-bold py-1.5 rounded-lg cursor-not-allowed">Slot Penuh</button>`;
         } else {
-          // TUTUP / HARI REHAT
           cardStyle = "bg-slate-100 border-slate-200 border shadow-inner opacity-60";
           badgeHtml = `<span class="bg-slate-200 text-slate-500 text-[9px] font-bold px-2 py-0.5 rounded-full mb-2 block w-max mx-auto border border-slate-300">TUTUP</span>`;
           buttonHtml = `<button disabled class="w-full mt-3 bg-slate-200 text-slate-400 text-[10px] font-bold py-1.5 rounded-lg cursor-not-allowed">-</button>`;
@@ -252,12 +224,8 @@
       });
     }
 
-    // ---------------------------------------------------------
-    // 5. BOOKING ACTION (Placeholder)
-    // ---------------------------------------------------------
     function initiateBooking(dateStr) {
-      alert(`Fungsi tempahan untuk tarikh ${dateStr} akan membuka pop-up pengesahan masa.`);
-      // Di sini kita akan tambah modal untuk pilih waktu Pagi/Petang nanti
+      alert(`Tempahan untuk tarikh ${dateStr} akan disambungkan ke sistem temujanji nanti.`);
     }
   </script>
 </body>
