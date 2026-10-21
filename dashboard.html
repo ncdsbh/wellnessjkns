@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Klinik Kesejahteraan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    /* Hide scrollbar for horizontal scrolling but keep functionality */
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen pb-20">
+
+  <!-- HEADER -->
+  <header class="bg-emerald-700 text-white p-5 rounded-b-3xl shadow-md sticky top-0 z-40">
+    <div class="max-w-xl mx-auto flex items-center justify-between">
+      <div>
+        <p class="text-emerald-200 text-xs font-medium tracking-wide uppercase">Selamat Datang,</p>
+        <h1 class="text-xl font-bold drop-shadow-sm truncate" id="userName">Memuatkan...</h1>
+      </div>
+      <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-inner">
+        <i class="fa-solid fa-user text-lg"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-xl mx-auto p-4 space-y-6 mt-2">
+
+    <!-- ANNOUNCEMENTS SECTION -->
+    <section id="announcementContainer" class="space-y-3 hidden">
+      <!-- Announcements will be injected here via JS -->
+    </section>
+
+    <!-- CLINIC SCHEDULE & BOOKING (HORIZONTAL SCROLL) -->
+    <section>
+      <div class="flex items-center justify-between mb-3 px-1">
+        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-calendar-days text-emerald-600"></i> Jadual Klinik
+        </h2>
+        <span class="text-[10px] text-slate-500 font-medium bg-slate-200 px-2 py-1 rounded-full">7 Hari Terkini</span>
+      </div>
+      
+      <!-- Horizontal Scrollable Container -->
+      <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2 px-1" id="scheduleContainer">
+        <!-- Skeleton Loading State -->
+        <div class="min-w-[120px] h-28 bg-slate-200 animate-pulse rounded-2xl border border-slate-200 shrink-0"></div>
+        <div class="min-w-[120px] h-28 bg-slate-200 animate-pulse rounded-2xl border border-slate-200 shrink-0"></div>
+        <div class="min-w-[120px] h-28 bg-slate-200 animate-pulse rounded-2xl border border-slate-200 shrink-0"></div>
+      </div>
+    </section>
+
+    <!-- QUICK VITAL CARDS (Placeholder based on blueprint) -->
+    <section>
+      <h2 class="text-base font-bold text-slate-800 mb-3 px-1 flex items-center gap-2">
+        <i class="fa-solid fa-heart-pulse text-rose-500"></i> Rekod Kesihatan Terkini
+      </h2>
+      <div class="grid grid-cols-2 gap-3">
+        <!-- BMI Card -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs text-slate-500 font-medium">BMI</span>
+            <i class="fa-solid fa-weight-scale text-indigo-400"></i>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-slate-800" id="vitalBmi">--</p>
+            <p class="text-[10px] text-emerald-500 font-medium mt-1 bg-emerald-50 inline-block px-1.5 rounded">Normal</p>
+          </div>
+        </div>
+        <!-- BP Card -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs text-slate-500 font-medium">Tekanan Darah</span>
+            <i class="fa-solid fa-droplet text-rose-400"></i>
+          </div>
+          <div>
+            <p class="text-xl font-bold text-slate-800" id="vitalBp">-- / --</p>
+            <p class="text-[10px] text-amber-500 font-medium mt-1 bg-amber-50 inline-block px-1.5 rounded">Berjaga-jaga</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="fixed bottom-0 w-full bg-white border-t border-slate-200 pb-safe z-50">
+    <div class="max-w-xl mx-auto flex justify-between items-center px-6 py-3">
+      <button class="flex flex-col items-center gap-1 text-emerald-600 transition">
+        <i class="fa-solid fa-house text-lg"></i>
+        <span class="text-[9px] font-bold">Utama</span>
+      </button>
+      <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-600 transition">
+        <i class="fa-solid fa-calendar-check text-lg"></i>
+        <span class="text-[9px] font-bold">Temujanji</span>
+      </button>
+      <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-600 transition">
+        <i class="fa-solid fa-chart-line text-lg"></i>
+        <span class="text-[9px] font-bold">Sejarah</span>
+      </button>
+      <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-600 transition">
+        <i class="fa-solid fa-gear text-lg"></i>
+        <span class="text-[9px] font-bold">Profil</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // ---------------------------------------------------------
+    // 1. MOCK DATA (Simulates Google Apps Script JSON Response)
+    // ---------------------------------------------------------
+    const MOCK_API_RESPONSE = {
+      status: "success",
+      user: {
+        name: "Ahmad Bin Abdullah",
+        latest_bmi: "22.4",
+        latest_bp: "135/85"
+      },
+      announcements: [
+        {
+          id: "A1",
+          title: "Kempen Derma Darah",
+          message: "Klinik akan mengadakan kempen derma darah pada hujung minggu ini. Semua dijemput hadir.",
+          priority: "Normal"
+        },
+        {
+          id: "A2",
+          title: "Penutupan Sementara Bekalan Air",
+          message: "Klinik hanya menerima kes kecemasan pada 25 Okt 2026 kerana gangguan bekalan air.",
+          priority: "High"
+        }
+      ],
+      schedule: [
+        { date: "2026-10-21", day: "Rabu", status: "Buka", booked: 12, max: 20 },
+        { date: "2026-10-22", day: "Khamis", status: "Buka", booked: 20, max: 20 }, // Penuh
+        { date: "2026-10-23", day: "Jumaat", status: "Tutup", booked: 0, max: 0 },
+        { date: "2026-10-24", day: "Sabtu", status: "Hari Rehat", booked: 0, max: 0 },
+        { date: "2026-10-25", day: "Ahad", status: "Hari Rehat", booked: 0, max: 0 },
+        { date: "2026-10-26", day: "Isnin", status: "Buka", booked: 5, max: 20 },
+        { date: "2026-10-27", day: "Selasa", status: "Buka", booked: 2, max: 20 }
+      ]
+    };
+
+    // ---------------------------------------------------------
+    // 2. INITIALIZATION
+    // ---------------------------------------------------------
+    window.addEventListener("DOMContentLoaded", () => {
+      // Simulate network delay for fetching data
+      setTimeout(() => {
+        loadDashboardData(MOCK_API_RESPONSE);
+      }, 800);
+    });
+
+    function loadDashboardData(data) {
+      // Populate User Info & Vitals
+      document.getElementById("userName").innerText = data.user.name;
+      document.getElementById("vitalBmi").innerText = data.user.latest_bmi;
+      document.getElementById("vitalBp").innerText = data.user.latest_bp;
+
+      renderAnnouncements(data.announcements);
+      renderSchedule(data.schedule);
+    }
+
+    // ---------------------------------------------------------
+    // 3. RENDER ANNOUNCEMENTS
+    // ---------------------------------------------------------
+    function renderAnnouncements(announcements) {
+      const container = document.getElementById("announcementContainer");
+      if (!announcements || announcements.length === 0) return;
+
+      container.innerHTML = ""; // Clear existing
+      container.classList.remove("hidden");
+
+      announcements.forEach(ann => {
+        const isHigh = ann.priority === "High";
+        
+        // Styling based on priority
+        const bgClass = isHigh ? "bg-red-50 border-red-200" : "bg-sky-50 border-sky-200";
+        const iconClass = isHigh ? "fa-circle-exclamation text-red-500" : "fa-bullhorn text-sky-500";
+        const titleColor = isHigh ? "text-red-700" : "text-sky-700";
+
+        const card = document.createElement("div");
+        card.className = `p-4 rounded-2xl border ${bgClass} shadow-sm relative overflow-hidden`;
+        card.innerHTML = `
+          <div class="flex items-start gap-3 relative z-10">
+            <div class="mt-1">
+              <i class="fa-solid ${iconClass} text-lg drop-shadow-sm"></i>
+            </div>
+            <div>
+              <h3 class="text-xs font-bold ${titleColor} uppercase tracking-wide mb-1">${ann.title}</h3>
+              <p class="text-[11px] text-slate-600 leading-relaxed">${ann.message}</p>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ---------------------------------------------------------
+    // 4. RENDER CLINIC SCHEDULE
+    // ---------------------------------------------------------
+    function renderSchedule(scheduleDays) {
+      const container = document.getElementById("scheduleContainer");
+      container.innerHTML = ""; // Clear skeletons
+
+      scheduleDays.forEach(day => {
+        const isOpen = day.status === "Buka";
+        const isFull = isOpen && day.booked >= day.max;
+        
+        // Parse date for display (e.g., "21 Okt")
+        const dateObj = new Date(day.date);
+        const dayNum = dateObj.getDate();
+        const monthStr = dateObj.toLocaleString('ms-MY', { month: 'short' });
+
+        // Styling based on Open/Closed/Full status
+        let cardStyle = "";
+        let buttonHtml = "";
+        let badgeHtml = "";
+
+        if (isOpen && !isFull) {
+          // BUKA & ADA SLOT
+          cardStyle = "bg-white border-emerald-200 border-2 shadow-md";
+          badgeHtml = `<span class="bg-emerald-100 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full mb-2 block w-max mx-auto border border-emerald-200">BUKA</span>`;
+          buttonHtml = `<button onclick="initiateBooking('${day.date}')" class="w-full mt-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-1.5 rounded-lg transition shadow-sm">Tempah Slot</button>`;
+        } else if (isOpen && isFull) {
+          // BUKA TAPI PENUH
+          cardStyle = "bg-slate-50 border-amber-200 border shadow-sm opacity-80";
+          badgeHtml = `<span class="bg-amber-100 text-amber-700 text-[9px] font-bold px-2 py-0.5 rounded-full mb-2 block w-max mx-auto border border-amber-200">PENUH</span>`;
+          buttonHtml = `<button disabled class="w-full mt-3 bg-slate-200 text-slate-400 text-[10px] font-bold py-1.5 rounded-lg cursor-not-allowed">Slot Penuh</button>`;
+        } else {
+          // TUTUP / HARI REHAT
+          cardStyle = "bg-slate-100 border-slate-200 border shadow-inner opacity-60";
+          badgeHtml = `<span class="bg-slate-200 text-slate-500 text-[9px] font-bold px-2 py-0.5 rounded-full mb-2 block w-max mx-auto border border-slate-300">TUTUP</span>`;
+          buttonHtml = `<button disabled class="w-full mt-3 bg-slate-200 text-slate-400 text-[10px] font-bold py-1.5 rounded-lg cursor-not-allowed">-</button>`;
+        }
+
+        const card = document.createElement("div");
+        card.className = `min-w-[120px] max-w-[120px] p-3 rounded-2xl flex flex-col items-center text-center shrink-0 transition-transform transform ${isOpen && !isFull ? 'hover:scale-105 cursor-pointer' : ''} ${cardStyle}`;
+        
+        card.innerHTML = `
+          ${badgeHtml}
+          <p class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-0.5">${day.day}</p>
+          <p class="text-2xl font-black text-slate-800 leading-none">${dayNum}</p>
+          <p class="text-[10px] text-slate-500 font-medium mt-0.5">${monthStr}</p>
+          ${buttonHtml}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ---------------------------------------------------------
+    // 5. BOOKING ACTION (Placeholder)
+    // ---------------------------------------------------------
+    function initiateBooking(dateStr) {
+      alert(`Fungsi tempahan untuk tarikh ${dateStr} akan membuka pop-up pengesahan masa.`);
+      // Di sini kita akan tambah modal untuk pilih waktu Pagi/Petang nanti
+    }
+  </script>
+</body>
+</html>
